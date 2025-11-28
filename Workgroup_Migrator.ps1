@@ -1,39 +1,36 @@
-
-
-
 #Transcript Logging
 $tmpName = "Migration_Kickoff_Log"
 $tmpPath = "C:\Temp\" + $tmpName + ".log"
 Start-Transcript -Append -Path $tmpPath
 
 # Constants
-# Name of the CSV file being used as a database.  It should be in the same directory as this script.
+
+# Base Path - Where the CSV, PSP Installer, etc will be located
+$basePath = "C:\Temp"
+
+# Name of the CSV file being used as a database.
 $csvName = "mig_db.csv"
 # Domain name of the "fake" domain where the object is stored
-$DomainName = "lab.rocklightnetworks.com"
+$DomainName = "fake.lan"
 # Runbook ID from the PSP Database (Links to the specific Runbook for this job)
-$RunbookGUIDs=@("6BE69B12-4E23-4AC4-0DC3-08DDE0CA5172")
+$RunbookGUIDs=@("BC481FD8-894C-4E2F-8B4B-08DD8B8E2DE8")
 # Name of Migration Agent Service
 $serviceName = "PowerSyncPro Migration Agent"
 
-# URL of .Net 8 Downloader (Typically Microsoft)
-$dotnet8_loc = "https://builds.dotnet.microsoft.com/dotnet/WindowsDesktop/8.0.20/windowsdesktop-runtime-8.0.20-win-x64.exe"
-$dotnet8_exeName = "windowsdesktop-runtime-win-x64.exe"
-# URL of PSP Migration Agent (PSP Server)
-$pspmig_loc = "https://psp1.rocklightnetworks.com/downloads/PSPMigrationAgentInstaller.msi"
+# PSP Migration Agent Name
+# This will be merged with $basePath above.
+$pspmig_loc = "PSPMigrationAgentInstaller.msi"
 
-# URL of PSP Server Agent Endpoint
-$pspsvr_endpoint = "https://psp1.rocklightnetworks.com/Agent"
-
-# PSP Server PSK
-$pspsvr_psk = "9zTwm/Q7uKqHJGo8lnjONHsEX8cDSiMDavLh/L8gEIQs2+BeHbwJWBWCWxSxz9IV"
-
+# PSP Server Location
+# URL to the PSP Agent Endpoint
+$psp_server = "https://psp.company.com/Agent"
+# PSP PSK
+$psp_psk = "<PSK from PSP Server>"
 
 # Begin Script
 
 # Set the CSV path variable assuming the file is in the same directory as the script
-$scriptDir = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition
-$CsvPath = Join-Path -Path $scriptDir -ChildPath $csvName
+$CsvPath = Join-Path -Path $basePath -ChildPath $csvName
 
 # Check if the CSV file exists
 if (-not (Test-Path $CsvPath)) {
@@ -88,33 +85,16 @@ if ($service) {
     Write-Host "Service '$serviceName' exists and its status is: $($service.Status)"
 } else {
     Write-Host "Service '$serviceName' does not exist."
-    Write-Host "PowerSync Pro was not found on this system... downloading and installing..."
+    Write-Host "PowerSync Pro was not found on this system... Installing..."
 
-    $installerPath = "C:\Temp\$dotnet8_exeName"
-
-    Write-Host "Downloading .Net 8 Desktop Runtime"
-    $ProgressPreference = 'SilentlyContinue'
-    Invoke-WebRequest -Uri $dotnet8_loc -Outfile $installerPath
-
-    $pspInstallerPath = "C:\Temp\PSPMigrationAgentInstaller.msi"
-
-    Write-Host "Downloading PSP Migration Agent"
-    $ProgressPreference = 'SilentlyContinue'
-    Invoke-WebRequest -Uri $pspmig_loc -Outfile $pspInstallerPath
-
-    # Install .net 8
-    $net8installParams = "/install /silent"
-    Write-Host "Installing .Net 8..."
-    $net8InstallStatus = (Start-Process -FilePath "c:\temp\$dotnet8_exeName" -ArgumentList $net8installParams -Wait -Passthru).ExitCode
-    Write-Host ".Net 8 Install exited with Status" $net8InstallStatus
+    $pspPath = Join-Path -Path $basePath -ChildPath $pspmig_loc
 
     # Install PSP Migration Agent
-
     # Install Arguments
     $PSPArguments = @(
-        "/i", $pspInstallerPath,
-        "PSK=$pspsvr_psk",
-        "URL=$pspsvr_endpoint",
+        "/i", $pspPath,
+        "PSK=$psp_psk",
+        "URL=$psp_server",
         "/qn",
         "/l*v", "C:\Temp\PSPAgent_Install.log"
     )
@@ -144,7 +124,7 @@ Write-Host "Running on" $ComputerName "..."
 
 # Obtain from the local system...
 # SID of the Local Workgroup User
-$SearchSID = Get-WmiObject win32_useraccount | Where-Object Name -match $LocalUserName
+$SearchSID = Get-WmiObject win32_useraccount | Where Name -match $LocalUserName
 $LocalSiD = $SearchSID.SID
 Write-Host "Current SID of" $LocalUserName "is" $LocalSiD
 
