@@ -102,12 +102,19 @@ Ensure:
 Before deployment, update the following variables:
 
 Variable	-- Description
+
 $basePath	-- Directory where CSV + MSI will be placed by RMM (e.g., C:\Temp)
+
 $csvName	-- Must match the CSV filename, typically mig_db.csv
+
 $domainName	-- FQDN of dummy AD (e.g., pspdummy.local)
+
 $RunbookGUIDs	-- GUID(s) of the Runbook used for migration
+
 $pspmig_loc	-- Filename of PSP Migration Agent installer
+
 $psp_server	-- PSP server URL (e.g., https://psp1.company.com/Agent)
+
 $psp_psk	-- Migration Agent PSK
 
 To find the Runbook GUID, see:
